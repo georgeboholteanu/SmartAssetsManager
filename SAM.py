@@ -5,7 +5,11 @@ import tkinter as tk
 from tkinter import MULTIPLE, filedialog, ttk, messagebox
 from tkinter.messagebox import askyesno
 from PIL import ImageTk, Image
+import shutil
 import os
+import zipfile
+import subprocess
+import winreg
 
 
 ########     LOAD ENVIRONMENT VARIABLES      ########
@@ -23,12 +27,12 @@ class App(tk.Tk):
         self.title("SAM - Smart Assets Manager")
         self.geometry(f"{App.WIDTH}x{App.HEIGHT}")
         self.resizable(False, False)
-        self.iconbitmap(os.path.join(proj_path, "SAM.ico"))
+        # self.iconbitmap(os.path.join(proj_path, "assets/SAM.ico"))
 
         # Load and resize multiple images
-        self.image_all = self.load_and_resize_image(proj_path + "/assets/select_all.ico", 25, 25)
-        self.image_none = self.load_and_resize_image(proj_path + "/assets/select_none.ico", 25, 25)
-        self.image_dir = self.load_and_resize_image(proj_path + "/assets/open_folder.ico", 25, 25)
+        # self.image_all = self.load_and_resize_image(proj_path + "/assets/select_all.ico", 25, 25)
+        # self.image_none = self.load_and_resize_image(proj_path + "/assets/select_none.ico", 25, 25)
+        # self.image_dir = self.load_and_resize_image(proj_path + "/assets/open_folder.ico", 25, 25)
 
         # WRAPPER
         self.wrapper_top = ttk.LabelFrame(master=self)
@@ -41,7 +45,7 @@ class App(tk.Tk):
         self.select_all_btn = tk.Button(
             self.wrapper_top,
             text="  All",
-            image=self.image_all,
+            # image=self.image_all,
             compound="left",
             width=60,
             height=20,            
@@ -53,7 +57,7 @@ class App(tk.Tk):
         self.none_btn = tk.Button(
             self.wrapper_top,
             text="  None",
-            image=self.image_none,
+            # image=self.image_none,
             compound="left",
             width=60,
             height=20,
@@ -65,7 +69,7 @@ class App(tk.Tk):
         self.open_dir_btn = tk.Button(
             self.wrapper_top,
             text="  Open",
-            image=self.image_dir,
+            # image=self.image_dir,
             compound="left",
             width=60,
             height=20,
@@ -173,7 +177,7 @@ class App(tk.Tk):
         self.changeOnHover(self.remove_local_bk, "#A7C7E7", "#d9dcdf")
         self.changeOnHover(self.remove_junk_folders, "#A7C7E7", "#d9dcdf")
         self.changeOnHover(self.refresh, "#A7C7E7", "#d9dcdf")
-        
+
     ###     FUNCTIONS FOR WRAPPER - FILES / FOLDER CLEANUP    ###
 
     # Load and resize each image loaded
@@ -280,6 +284,102 @@ class App(tk.Tk):
         except NameError:
             pass
 
+    def remove_junk(self):
+        try:
+            if len(self.listbox.curselection()) > 0:
+                for i in self.listbox.curselection():
+                    junk_folder = f"{path_with_folders}\\{self.listbox.get(i)}\\junk"
+
+                    try:
+                        shutil.rmtree(junk_folder)
+                    except Exception as e:
+                        print(e)
+
+            else:
+                messagebox.showinfo("Information", "Please select the folders")
+
+        except NameError or PermissionError:
+            pass
+
+    def remove_bk(self):
+        try:
+            if len(self.listbox.curselection()) > 0:
+                for i in self.listbox.curselection():
+                    local_bk_folder = (
+                        f"{path_with_folders}\\{self.listbox.get(i)}\\local_backup"
+                    )
+
+                    try:
+                        shutil.rmtree(local_bk_folder)
+                    except Exception as e:
+                        print(e)
+
+            else:
+                messagebox.showinfo("Information", "Please select the folders")
+
+        except NameError or PermissionError:
+            pass
+
+    def extract_archives(self):
+        try:
+            if len(self.listbox.curselection()) > 0:
+                for i in self.listbox.curselection():
+                    root_folder = os.path.join(path_with_folders, self.listbox.get(i))
+                    try:
+                        archives_found = [
+                            os.path.join(root, filename)
+                            for root, dirs, files in os.walk(root_folder)
+                            for filename in files
+                            if filename.endswith(".rar") or filename.endswith(".zip")
+                        ]
+                        # extract archives found in root folder
+                        for arch in archives_found:
+                            self.extract_recursively(arch, root_folder)
+
+                    except Exception as e:
+                        # Handle any exceptions that occur during the extraction process
+                        print(
+                            "An error occurred while extracting the archives:", str(e)
+                        )
+
+        except Exception as e:
+            # Handle any exceptions that occur during selection process
+            print("An error occurred while extracting the archives:", str(e))
+
+    def extract_recursively(self, archive_path, output_folder):
+        # Get extracted folder
+        extract_folder = os.path.join(output_folder, os.path.splitext(archive_path)[0])
+
+        with rarfile.RarFile(archive_path, "r") as archive:
+            # Extract all files in the archive
+            archive.extractall(extract_folder)
+
+        try:
+            if not os.path.exists(extract_folder):
+                # Create the output folder if it doesn't exist
+                os.mkdir(extract_folder)
+        except OSError as e:
+            print(f"Error when creating folder {extract_folder}, error: {e}")
+
+        # Filter archives in extracted folder
+        child_archives = [
+            os.path.join(root, filename)
+            for root, _, filenames in os.walk(extract_folder)
+            for filename in filenames
+            if os.path.splitext(filename)[1][1:].lower() in ["zip", "rar"]
+        ]
+
+        if len(child_archives) > 0:
+            for child in child_archives:
+                nested_output_folder = os.path.dirname(child)
+
+                if child.endswith("rar"):
+                    self.extract_recursively(child, nested_output_folder)
+                elif child.endswith("zip"):
+                    with zipfile.ZipFile(archive_path, "r") as zip_archive:
+                        # Extract all files in the archive
+                        zip_archive.extractall(nested_output_folder)
+
     # open selected folder
     def open_dir(self):
         selected_indices = self.listbox.curselection()
@@ -306,3 +406,8 @@ class App(tk.Tk):
         )
         if answer:
             self.remove_junk()
+
+
+if __name__ == "__main__":
+    app = App()
+    app.mainloop()
