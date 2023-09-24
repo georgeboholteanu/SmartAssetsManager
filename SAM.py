@@ -5,12 +5,7 @@ import tkinter as tk
 from tkinter import MULTIPLE, filedialog, ttk, messagebox
 from tkinter.messagebox import askyesno
 from PIL import ImageTk, Image
-import shutil
 import os
-import zipfile
-import subprocess
-import winreg
-
 
 
 ########     LOAD ENVIRONMENT VARIABLES      ########
@@ -262,3 +257,52 @@ class App(tk.Tk):
                 print("Error with the path")
         except NameError:
             print('"path_with_folders" is not defined')
+
+    def selected_item(self):
+        try:
+            for i in self.listbox.curselection():
+                local_folder_path = os.path.join(path_with_folders, self.listbox.get(i))
+
+                ORG.organize_folder(local_folder_path)
+
+        except FileNotFoundError or NameError or PermissionError:
+            pass
+
+    def select_all(self):
+        try:
+            self.listbox.selection_set(0, tk.END)
+        except NameError:
+            pass
+
+    def deselect_all(self):
+        try:
+            self.listbox.selection_clear(0, tk.END)
+        except NameError:
+            pass
+
+    # open selected folder
+    def open_dir(self):
+        selected_indices = self.listbox.curselection()
+        if len(selected_indices) == 1:
+            selected_folder = self.listbox.get(selected_indices[0])
+            basis_folder = os.path.join(path_with_folders, selected_folder)
+            if os.path.exists(basis_folder):
+                os.startfile(basis_folder)
+        else:
+            messagebox.showinfo("Information", "Please select one folder!")
+
+    def confirm_remove_bk(self):
+        answer = askyesno(
+            title="confirmation",
+            message='Are you sure that you want to delete "Local Backup" folders in selected directories?',
+        )
+        if answer:
+            self.remove_bk()
+
+    def confirm_remove_junk(self):
+        answer = askyesno(
+            title="confirmation",
+            message='Are you sure that you want to delete "Junk" folders in selected directories?',
+        )
+        if answer:
+            self.remove_junk()
