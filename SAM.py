@@ -1,9 +1,16 @@
 ########     MODULES    ########
+from modules import organize_folders as ORG
 from dotenv import load_dotenv
 import tkinter as tk
 from tkinter import MULTIPLE, filedialog, ttk, messagebox
 from tkinter.messagebox import askyesno
+from PIL import ImageTk, Image
+import shutil
 import os
+import zipfile
+import subprocess
+import winreg
+
 
 
 ########     LOAD ENVIRONMENT VARIABLES      ########
@@ -172,3 +179,86 @@ class App(tk.Tk):
         self.changeOnHover(self.remove_junk_folders, "#A7C7E7", "#d9dcdf")
         self.changeOnHover(self.refresh, "#A7C7E7", "#d9dcdf")
         
+    ###     FUNCTIONS FOR WRAPPER - FILES / FOLDER CLEANUP    ###
+
+    # Load and resize each image loaded
+    def load_and_resize_image(self, file_path, max_width, max_height):
+        try:
+            # Load the image using Pillow
+            image = Image.open(file_path)
+
+            # Resize the image to fit within the specified maximum dimensions while preserving aspect ratio
+            image.thumbnail((max_width, max_height), Image.LANCZOS)
+
+            # Convert the image to RGB mode to ensure it has a valid transparency mask
+            image = image.convert("RGBA")
+
+            # Create a PhotoImage object from the resized image and return it
+            photo = ImageTk.PhotoImage(image)
+            return photo
+        except Exception as e:
+            print(f"Error loading image: {e}")
+            return None
+
+    # Change properties of button on hover
+    def changeOnHover(self, button, colorOnHover, colorOnLeave):
+        # adjusting background of the widget
+        # background on entering widget
+        button.bind("<Enter>", func=lambda e: button.config(background=colorOnHover))
+
+        # background color on leving widget
+        button.bind("<Leave>", func=lambda e: button.config(background=colorOnLeave))
+
+    def browse_folders(self):
+        try:
+            global path_with_folders
+            path_with_folders = filedialog.askdirectory(initialdir="/")
+
+            global subFolders
+            subFolders = [
+                str(itm)
+                for itm in os.listdir(path_with_folders)
+                if os.path.isdir(os.path.join(path_with_folders, itm)) and os.path.exists(os.path.join(path_with_folders, itm))
+            ]
+            
+            # remove items in list
+            self.listbox.delete(0, "end")
+            
+            # add new items to list
+            if len(subFolders) > 0:
+                for i in range(len(subFolders)):
+                    self.listbox.insert(i, subFolders[i])
+
+            else:
+                self.listbox.insert(0, "No Subfolders Found in Specified Location")
+                print("No Subfolders found")
+
+        except FileNotFoundError:
+            print("Loading path canceled by user")
+        except NameError:
+            print("Name error on path")
+        except PermissionError:
+            print("Permisions not allowed by admin")
+    
+    def refresh_list(self):
+        try:
+            if path_with_folders:
+                subFolders = [
+                    str(itm)
+                    for itm in os.listdir(path_with_folders)
+                    if os.path.isdir(os.path.join(path_with_folders, itm)) and os.path.exists(os.path.join(path_with_folders, itm))
+                ]
+                # remove items in list
+                self.listbox.delete(0, "end")
+                
+                # add new items to list
+                if len(subFolders) > 0:
+                    for i in range(len(subFolders)):
+                        self.listbox.insert(i, subFolders[i])
+                else:
+                    self.listbox.insert(0, "No Subfolders Found in Specified Location")
+                    print("No Subfolders found")
+            else:
+                print("Error with the path")
+        except NameError:
+            print('"path_with_folders" is not defined')
