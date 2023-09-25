@@ -1,2 +1,2 @@
 def organize_folder(targetPATH):
-    pass
+    print("organize_folder")

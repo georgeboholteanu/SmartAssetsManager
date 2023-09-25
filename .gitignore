@@ -2,3 +2,5 @@
 .env
 env/
 modules/__pycache__/
+.dependencies/
+.compilers

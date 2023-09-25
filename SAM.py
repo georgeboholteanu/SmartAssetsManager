@@ -11,10 +11,98 @@ import zipfile
 import subprocess
 import winreg
 
-
 ########     LOAD ENVIRONMENT VARIABLES      ########
 load_dotenv()
-proj_path = os.getenv('PROJ_PATH')
+proj_path = os.getenv('proj_path')
+
+########     SET ENVIRONMENT VARIABLES      ########
+def set_environment_variables():
+    # The name and value of the environment variable you want to set
+    variable_name = "UNRAR_LIB_PATH"
+    variable_value = r"C:\Program Files (x86)\UnrarDLL\x64\UnRAR64.dll"
+
+    try:
+        # Open the Windows Registry key for environment variables in read mode
+        key = winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
+            0,
+            winreg.KEY_READ,
+        )
+
+        try:
+            # Get the current value associated with variable_name
+            existing_value, value_type = winreg.QueryValueEx(key, variable_name)
+
+            # Compare the existing value with the value you want to set
+            if existing_value == variable_value:
+                pass
+                # print(f"The environment variable '{variable_name}' already exists with the same value. OK!")
+            else:
+                # If the values don't match, you can set the environment variable
+                key = winreg.OpenKey(
+                    winreg.HKEY_LOCAL_MACHINE,
+                    r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
+                    0,
+                    winreg.KEY_SET_VALUE,
+                )
+                winreg.SetValueEx(key, variable_name, 0, winreg.REG_SZ, variable_value)
+                winreg.CloseKey(key)
+                print(f"Environment variable '{variable_name}' set successfully.")
+        except FileNotFoundError:
+            # If the variable does not exist, you can set it
+            key = winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE,
+                r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
+                0,
+                winreg.KEY_SET_VALUE,
+            )
+            winreg.SetValueEx(key, variable_name, 0, winreg.REG_SZ, variable_value)
+            winreg.CloseKey(key)
+            print(f"Environment variable '{variable_name}' set successfully.")
+
+        # Close the registry key
+        winreg.CloseKey(key)
+    except PermissionError:
+        print("Permission error. Make sure you have administrator privileges.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+########     INSTALL UNRARLL MODULE IF NOT FOUND    ########
+global unrar_path
+unrar_path = r"C:/Program Files (x86)/UnrarDLL/x64/UnRAR64.dll"
+try:
+    if not os.path.exists(unrar_path):
+        # Install UNRARDLL FROM PATH
+        unrar_installer = f"{proj_path}.dependencies/UnRARDLL-installer.exe"
+        try:
+            # Use subprocess to run the installer
+            subprocess.run(unrar_installer, check=True)
+            set_environment_variables()
+            from unrar import rarfile
+
+            # If you want to wait for the batch file to finish before continuing, remove 'shell=True'
+            print(".exe file executed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error while executing the .exe file: {e}")
+        except FileNotFoundError:
+            print(
+                f"The .exe file was not found at the specified path: {unrar_installer}"
+            )
+        except Exception as e:
+            print(f"An error occurred: {e}")
+    else:
+        try:
+            from unrar import rarfile
+        except Exception as e:
+            print(f"An error occurred with RAR module: {e}")
+
+except Exception as e:
+    print(f"Error with path: {unrar_path}, error: {e}")
+
+set_environment_variables()
+
 
 ########       MAIN APP        ########
 class App(tk.Tk):
@@ -27,12 +115,12 @@ class App(tk.Tk):
         self.title("SAM - Smart Assets Manager")
         self.geometry(f"{App.WIDTH}x{App.HEIGHT}")
         self.resizable(False, False)
-        # self.iconbitmap(os.path.join(proj_path, "assets/SAM.ico"))
+        self.iconbitmap(f"{proj_path}" + "/assets/SAM.ico")
 
         # Load and resize multiple images
-        # self.image_all = self.load_and_resize_image(proj_path + "/assets/select_all.ico", 25, 25)
-        # self.image_none = self.load_and_resize_image(proj_path + "/assets/select_none.ico", 25, 25)
-        # self.image_dir = self.load_and_resize_image(proj_path + "/assets/open_folder.ico", 25, 25)
+        self.image_all = self.load_and_resize_image(f"{proj_path}" + "/assets/select_all.ico", 25, 25)
+        self.image_none = self.load_and_resize_image(f"{proj_path}" + "/assets/select_none.ico", 25, 25)
+        self.image_dir = self.load_and_resize_image(f"{proj_path}" + "/assets/open_folder.ico", 25, 25)
 
         # WRAPPER
         self.wrapper_top = ttk.LabelFrame(master=self)
@@ -45,7 +133,7 @@ class App(tk.Tk):
         self.select_all_btn = tk.Button(
             self.wrapper_top,
             text="  All",
-            # image=self.image_all,
+            image=self.image_all,
             compound="left",
             width=60,
             height=20,            
@@ -57,7 +145,7 @@ class App(tk.Tk):
         self.none_btn = tk.Button(
             self.wrapper_top,
             text="  None",
-            # image=self.image_none,
+            image=self.image_none,
             compound="left",
             width=60,
             height=20,
@@ -69,7 +157,7 @@ class App(tk.Tk):
         self.open_dir_btn = tk.Button(
             self.wrapper_top,
             text="  Open",
-            # image=self.image_dir,
+            image=self.image_dir,
             compound="left",
             width=60,
             height=20,
