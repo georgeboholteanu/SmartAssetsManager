@@ -15,6 +15,7 @@ import winreg
 load_dotenv()
 proj_path = os.getenv('proj_path')
 
+
 ########     SET ENVIRONMENT VARIABLES      ########
 def set_environment_variables():
     # The name and value of the environment variable you want to set
@@ -75,29 +76,28 @@ unrar_path = r"C:/Program Files (x86)/UnrarDLL/x64/UnRAR64.dll"
 try:
     if not os.path.exists(unrar_path):
         # Install UNRARDLL FROM PATH
-        unrar_installer = f"{proj_path}.dependencies/UnRARDLL-installer.exe"
-        try:
-            # Use subprocess to run the installer
-            subprocess.run(unrar_installer, check=True)
-            set_environment_variables()
-            from unrar import rarfile
-
-            # If you want to wait for the batch file to finish before continuing, remove 'shell=True'
-            print(".exe file executed successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"Error while executing the .exe file: {e}")
-        except FileNotFoundError:
-            print(
-                f"The .exe file was not found at the specified path: {unrar_installer}"
-            )
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        unrar_installer = os.getenv('unrar_installer_path')
+        if unrar_installer:
+            try:
+                if not os.path.exists(unrar_installer):
+                    raise FileNotFoundError(f"The .exe file was not found at the specified path: {unrar_installer}")
+                
+                # Use subprocess to run the installer
+                subprocess.run(unrar_installer, check=True)
+                print(".exe file executed successfully.")
+            except subprocess.CalledProcessError as e:
+                print(f"Error while executing the .exe file: {e}")
+            except FileNotFoundError as e:
+                print(e)
+            except Exception as e:
+                print(f"An error occurred: {e}")
+        else:
+            print("Environment variable 'unrar_installer_path' not set.")
     else:
         try:
             from unrar import rarfile
-        except Exception as e:
-            print(f"An error occurred with RAR module: {e}")
-
+        except ImportError:
+            print("RAR module not found. You may need to install it.")
 except Exception as e:
     print(f"Error with path: {unrar_path}, error: {e}")
 
@@ -367,6 +367,7 @@ class App(tk.Tk):
             pass
 
     def deselect_all(self):
+        print(f"{proj_path}" + "/assets/SAM.ico")
         try:
             self.listbox.selection_clear(0, tk.END)
         except NameError:
