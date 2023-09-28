@@ -1,5 +1,6 @@
 ########     MODULES    ########
-from modules import organize_folders as ORG
+from modules import organize_folders as org
+from modules import fix_env_vars as fix
 from dotenv import load_dotenv
 import tkinter as tk
 from tkinter import MULTIPLE, filedialog, ttk, messagebox
@@ -8,100 +9,16 @@ from PIL import ImageTk, Image
 import shutil
 import os
 import zipfile
-import subprocess
-import winreg
+
 
 ########     LOAD ENVIRONMENT VARIABLES      ########
 load_dotenv()
-proj_path = os.getenv('proj_path')
+proj_path = f"{os.getenv('proj_path')}"
 
 
-########     SET ENVIRONMENT VARIABLES      ########
-def set_environment_variables():
-    # The name and value of the environment variable you want to set
-    variable_name = "UNRAR_LIB_PATH"
-    variable_value = r"C:\Program Files (x86)\UnrarDLL\x64\UnRAR64.dll"
-
-    try:
-        # Open the Windows Registry key for environment variables in read mode
-        key = winreg.OpenKey(
-            winreg.HKEY_LOCAL_MACHINE,
-            r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
-            0,
-            winreg.KEY_READ,
-        )
-
-        try:
-            # Get the current value associated with variable_name
-            existing_value, value_type = winreg.QueryValueEx(key, variable_name)
-
-            # Compare the existing value with the value you want to set
-            if existing_value == variable_value:
-                pass
-                # print(f"The environment variable '{variable_name}' already exists with the same value. OK!")
-            else:
-                # If the values don't match, you can set the environment variable
-                key = winreg.OpenKey(
-                    winreg.HKEY_LOCAL_MACHINE,
-                    r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
-                    0,
-                    winreg.KEY_SET_VALUE,
-                )
-                winreg.SetValueEx(key, variable_name, 0, winreg.REG_SZ, variable_value)
-                winreg.CloseKey(key)
-                print(f"Environment variable '{variable_name}' set successfully.")
-        except FileNotFoundError:
-            # If the variable does not exist, you can set it
-            key = winreg.OpenKey(
-                winreg.HKEY_LOCAL_MACHINE,
-                r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
-                0,
-                winreg.KEY_SET_VALUE,
-            )
-            winreg.SetValueEx(key, variable_name, 0, winreg.REG_SZ, variable_value)
-            winreg.CloseKey(key)
-            print(f"Environment variable '{variable_name}' set successfully.")
-
-        # Close the registry key
-        winreg.CloseKey(key)
-    except PermissionError:
-        print("Permission error. Make sure you have administrator privileges.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-
-########     INSTALL UNRARLL MODULE IF NOT FOUND    ########
-global unrar_path
-unrar_path = r"C:/Program Files (x86)/UnrarDLL/x64/UnRAR64.dll"
-try:
-    if not os.path.exists(unrar_path):
-        # Install UNRARDLL FROM PATH
-        unrar_installer = os.getenv('unrar_installer_path')
-        if unrar_installer:
-            try:
-                if not os.path.exists(unrar_installer):
-                    raise FileNotFoundError(f"The .exe file was not found at the specified path: {unrar_installer}")
-                
-                # Use subprocess to run the installer
-                subprocess.run(unrar_installer, check=True)
-                print(".exe file executed successfully.")
-            except subprocess.CalledProcessError as e:
-                print(f"Error while executing the .exe file: {e}")
-            except FileNotFoundError as e:
-                print(e)
-            except Exception as e:
-                print(f"An error occurred: {e}")
-        else:
-            print("Environment variable 'unrar_installer_path' not set.")
-    else:
-        try:
-            from unrar import rarfile
-        except ImportError:
-            print("RAR module not found. You may need to install it.")
-except Exception as e:
-    print(f"Error with path: {unrar_path}, error: {e}")
-
-set_environment_variables()
+########     FIX MISSING PLUGINS AND ADD ENV PATHS      ########
+fix.set_environment_variables()
+fix.install_unrar()
 
 
 ########       MAIN APP        ########
@@ -115,12 +32,12 @@ class App(tk.Tk):
         self.title("SAM - Smart Assets Manager")
         self.geometry(f"{App.WIDTH}x{App.HEIGHT}")
         self.resizable(False, False)
-        self.iconbitmap(f"{proj_path}" + "/assets/SAM.ico")
+        self.iconbitmap(proj_path + "/assets/SAM.ico")
 
         # Load and resize multiple images
-        self.image_all = self.load_and_resize_image(f"{proj_path}" + "/assets/select_all.ico", 25, 25)
-        self.image_none = self.load_and_resize_image(f"{proj_path}" + "/assets/select_none.ico", 25, 25)
-        self.image_dir = self.load_and_resize_image(f"{proj_path}" + "/assets/open_folder.ico", 25, 25)
+        self.image_all = self.load_and_resize_image(proj_path + "/assets/select_all.ico", 25, 25)
+        self.image_none = self.load_and_resize_image(proj_path + "/assets/select_none.ico", 25, 25)
+        self.image_dir = self.load_and_resize_image(proj_path + "/assets/open_folder.ico", 25, 25)
 
         # WRAPPER
         self.wrapper_top = ttk.LabelFrame(master=self)
@@ -355,7 +272,7 @@ class App(tk.Tk):
             for i in self.listbox.curselection():
                 local_folder_path = os.path.join(path_with_folders, self.listbox.get(i))
 
-                ORG.organize_folder(local_folder_path)
+                org.organize_folder(local_folder_path)
 
         except FileNotFoundError or NameError or PermissionError:
             pass
@@ -367,7 +284,6 @@ class App(tk.Tk):
             pass
 
     def deselect_all(self):
-        print(f"{proj_path}" + "/assets/SAM.ico")
         try:
             self.listbox.selection_clear(0, tk.END)
         except NameError:
@@ -435,14 +351,22 @@ class App(tk.Tk):
             # Handle any exceptions that occur during selection process
             print("An error occurred while extracting the archives:", str(e))
 
+
     def extract_recursively(self, archive_path, output_folder):
         # Get extracted folder
         extract_folder = os.path.join(output_folder, os.path.splitext(archive_path)[0])
+        
+        try:
+            from unrar import rarfile
+            
+            with rarfile.RarFile(archive_path, "r") as archive:
+                # Extract all files in the archive
+                archive.extractall(extract_folder)
 
-        with rarfile.RarFile(archive_path, "r") as archive:
-            # Extract all files in the archive
-            archive.extractall(extract_folder)
-
+        except ImportError:            
+            print("RAR module not found. You may need to install it.")
+                
+            
         try:
             if not os.path.exists(extract_folder):
                 # Create the output folder if it doesn't exist
@@ -450,15 +374,15 @@ class App(tk.Tk):
         except OSError as e:
             print(f"Error when creating folder {extract_folder}, error: {e}")
 
-        # Filter archives in extracted folder
+        # Filter archives in child folder
         child_archives = [
             os.path.join(root, filename)
             for root, _, filenames in os.walk(extract_folder)
             for filename in filenames
             if os.path.splitext(filename)[1][1:].lower() in ["zip", "rar"]
         ]
-
         if len(child_archives) > 0:
+            
             for child in child_archives:
                 nested_output_folder = os.path.dirname(child)
 

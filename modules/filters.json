@@ -1,0 +1,55 @@
+{
+    "MAX":["max"],
+    "MAPS": [
+        "jpg",
+        "jpeg",
+        "png",
+        "tif",
+        "tga",
+        "exr",
+        "gif",
+        "bmp",
+        "hdr",
+        "hdri",
+        "lut",
+        "cube",
+        "ies",
+        "igs"
+    ],
+
+    "EXPORT": [
+        "obj",
+        "fbx",
+        "skp",
+        "mtl",
+        "ms",
+        "mat",
+        "3ds",
+        "dwg",
+        "dxf"
+    ],
+
+    "ARCHIVES": ["zip", "rar", "7zip", "7z"],
+
+    "MISC": [
+        "doc",
+        "docx",
+        "xls",
+        "xlsx",
+        "pdf",
+        "xls",
+        "ods",
+        "ms",
+        "mcr",
+        "mse",
+        "dll",
+        "dlm",
+        "dlo",
+        "dlr",
+        "dlt",
+        "dlu"
+    ],
+    "JUNK":[],
+    "PREVIEWS":["jpg", "jpeg", "png", "bmp"],
+    "PROXIES":["cproxy", "cmesh", "cbin", "czmesh", "cgeo", "vrmesh"]
+    }
