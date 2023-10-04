@@ -1,7 +1,11 @@
 
 *A.  DESCRIPTION*
 
-The app can be used to automate downloading and organising of multiple assests into individual specific folder structure. It uses **requests** module to login on hosting platform of the assets and download them from the selected URLs.
+The app can be used to automate downloading and organising of multiple assests into individual specific folder structure.
+
+It uses **requests** module to login on hosting platform of the assets and download them from the selected URLs.
+
+<img src="./assets/app_mockup.jpg" alt="SAM" width="300">
 
 
 *B.  REQUIREMENTS*
@@ -33,14 +37,16 @@ The app can be used to automate downloading and organising of multiple assests i
 * ***filters.json*** sets the folders structure and how the different file types will be spread in the root folder
 
 *G.  USING THE APP*
-* As a best practice is recommended to create a local Virtual Environment. This can be done by:
+  
+
+  As a best practice is recommended to create a local Virtual Environment. This can be done by:
   * running **pip install virtualenv** to Install a Virtual Environment using Venv
-  * To use venv in your project, in your terminal, create a new project folder (**mkdir projectABC**) in the terminal and run **python<version> -m venv <virtual-environment-name>** (**python3.11 -m venv env**)
+  * To use venv in your project, in your terminal, create a new project folder (**mkdir projectABC**) in the terminal and run **python<version> -m venv <virtual-environment-name>** (**python3.10 -m venv env**)
   * cd in the terminal to the project folder (**cd projectABC**)
   * you will need to activate the virtual env (**source env/bin/activate** for MAC or **source/env/scripts/activate** for Windows)
   * running **pip list** should check if only base packages are present (pip and setup tools) in order for the activation to be correct
-  * you can generate a text file listing all your project dependencies by running **pip freeze > requirements.txt**
-  * to install the libararies required run **pip install -r requirements.txt**
+  * to install the libraries required run **pip install -r requirements.txt**
+  * in case you want to make changes and add use custom libraries you can generate a requirements text file listing all your project dependencies by running **pip freeze > requirements.txt**
 
 **ORGANIZE FOLDERS**
 * The first section of the app UI focuses on file management where the second one does the web crawling and downloads the data.

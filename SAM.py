@@ -1,9 +1,10 @@
 ########     MODULES    ########
 from modules import organize_folders as org
 from modules import fix_env_vars as fix
+from modules import ws_data as ws_data
 from dotenv import load_dotenv
 import tkinter as tk
-from tkinter import MULTIPLE, filedialog, ttk, messagebox
+from tkinter import MULTIPLE, filedialog, ttk, messagebox, StringVar
 from tkinter.messagebox import askyesno
 from PIL import ImageTk, Image
 import shutil
@@ -23,10 +24,9 @@ fix.install_unrar()
 
 ########       MAIN APP        ########
 class App(tk.Tk):
-    
     WIDTH = 360
-    HEIGHT = 600  
-    
+    HEIGHT = 740
+
     def __init__(self):
         super().__init__()
         self.title("SAM - Smart Assets Manager")
@@ -35,127 +35,40 @@ class App(tk.Tk):
         self.iconbitmap(proj_path + "/assets/SAM.ico")
 
         # Load and resize multiple images
-        self.image_all = self.load_and_resize_image(proj_path + "/assets/select_all.ico", 25, 25)
-        self.image_none = self.load_and_resize_image(proj_path + "/assets/select_none.ico", 25, 25)
-        self.image_dir = self.load_and_resize_image(proj_path + "/assets/open_folder.ico", 25, 25)
+        self.image_all = self.load_and_resize_image(
+            proj_path + "/assets/select_all.ico", 25, 25
+        )
+        self.image_none = self.load_and_resize_image(
+            proj_path + "/assets/select_none.ico", 25, 25
+        )
+        self.image_dir = self.load_and_resize_image(
+            proj_path + "/assets/open_folder.ico", 25, 25
+        )
 
         # WRAPPER
         self.wrapper_top = ttk.LabelFrame(master=self)
+        self.wrapper_bottom = ttk.LabelFrame(master=self)
 
-        # Create label
-        self.assets_organizer_lbl = tk.Label(self.wrapper_top, text="Organize Folders")
-        self.assets_organizer_lbl.place(relx=0.02, rely=0, relheight=0.05)
+        # Create labels
+        self.assets_organizer_lbl = tk.Label(self.wrapper_top, text="ORGANIZER")
 
-        # Create buttons
-        self.select_all_btn = tk.Button(
-            self.wrapper_top,
-            text="  All",
-            image=self.image_all,
-            compound="left",
-            width=60,
-            height=20,            
-            highlightthickness=1,
-            bg="SystemButtonFace",
-            bd=0,
-            command=self.select_all,
+        self.batch_download_lbl = tk.Label(self.wrapper_bottom, text="GET DATA")
+        self.download_folder_lbl = tk.Label(
+            self.wrapper_bottom, text="Download Folder Path"
         )
-        self.none_btn = tk.Button(
-            self.wrapper_top,
-            text="  None",
-            image=self.image_none,
-            compound="left",
-            width=60,
-            height=20,
-            highlightthickness=1,
-            bg="SystemButtonFace",
-            bd=0,
-            command=self.deselect_all,
+        self.percent = StringVar()
+        self.percent_lbl = tk.Label(self.wrapper_bottom, textvariable=self.percent)
+        self.download_folder_entry = tk.Entry(self.wrapper_bottom, width=44)
+        self.prog_bar = ttk.Progressbar(
+            self.wrapper_bottom, orient="horizontal", mode="determinate"
         )
-        self.open_dir_btn = tk.Button(
-            self.wrapper_top,
-            text="  Open",
-            image=self.image_dir,
-            compound="left",
-            width=60,
-            height=20,
-            highlightthickness=1,
-            bg="SystemButtonFace",
-            bd=0,
-            command=self.open_dir,
-        )
-        
-        self.browse_btn = tk.Button(
-            self.wrapper_top,
-            text="Browse Location",
-            width=13,
-            fg="black",
-            bg="#DAF7A6",
-            command=self.browse_folders,
-        )
-        self.extract_btn = tk.Button(
-            self.wrapper_top,
-            text="Extract Archives",
-            width=13,
-            fg="black",
-            bg="#FFC300",
-            command=self.extract_archives,
-        )
-        self.runOrganizer_btn = tk.Button(
-            self.wrapper_top,
-            text="Run Organizer",
-            width=13,
-            fg="black",
-            bg="#4CBB17",
-            command=self.selected_item,
-        )
-        self.remove_local_bk = tk.Button(
-            self.wrapper_top,
-            text="Remove Backup",
-            width=13,
-            height=1,
-            fg="black",
-            bg="#d9dcdf",
-            command=self.confirm_remove_bk,
-        )
-        self.remove_junk_folders = tk.Button(
-            self.wrapper_top,
-            text="Remove Junk",
-            width=13,
-            height=20,
-            fg="black",
-            bg="#d9dcdf",
-            command=self.confirm_remove_junk,
-        )        
-        self.refresh = tk.Button(
-            self.wrapper_top,
-            text="Refresh List",
-            width=13,
-            height=20,
-            fg="black",
-            bg="#d9dcdf",
-            command=self.refresh_list,
-        )
-        
-        # Position buttons
-        self.open_dir_btn.place(relx=0.35, rely=0, relheight=0.05, relwidth=0.2)
-        self.none_btn.place(relx=0.55, rely=0, relheight=0.05, relwidth=0.2)
-        self.select_all_btn.place(relx=0.75, rely=0, relheight=0.05, relwidth=0.2)
-        
-        self.browse_btn.place(relx=0.02, rely=0.87, relheight=0.05)
-        self.extract_btn.place(relx=0.33, rely=0.87, relheight=0.05)
-        self.runOrganizer_btn.place(relx=0.64, rely=0.87, relheight=0.05)
-
-        self.remove_local_bk.place(relx=0.02, rely=0.93, relheight=0.05)
-        self.remove_junk_folders.place(relx=0.33, rely=0.93, relheight=0.05)
-        self.refresh.place(relx=0.64, rely=0.93, relheight=0.05)
 
         # Create listbox
         self.list_items = tk.StringVar(value=["" for i in range(10)])
         self.listbox = tk.Listbox(
             self.wrapper_top, selectmode=MULTIPLE, listvariable=self.list_items
         )
-        self.listbox.place(relwidth=0.94, relheight=0.8, relx=0.02, rely=0.06)
-        
+
         # Create scrollbar
         self.xscrollbar = ttk.Scrollbar(
             self.listbox, orient="horizontal", command=self.listbox.xview
@@ -167,10 +80,135 @@ class App(tk.Tk):
         )
         self.yscrollbar.pack(side="right", fill=tk.Y)
 
+        # Create buttons
+        self.select_all_btn = tk.Button(
+            self.wrapper_top,
+            text="  All",
+            image=self.image_all,
+            compound="left",
+            highlightthickness=1,
+            bg="SystemButtonFace",
+            bd=0,
+            command=self.select_all,
+        )
+        self.none_btn = tk.Button(
+            self.wrapper_top,
+            text="  None",
+            image=self.image_none,
+            compound="left",
+            highlightthickness=1,
+            bg="SystemButtonFace",
+            bd=0,
+            command=self.deselect_all,
+        )
+        self.open_dir_btn = tk.Button(
+            self.wrapper_top,
+            text="  Open",
+            image=self.image_dir,
+            compound="left",
+            highlightthickness=1,
+            bg="SystemButtonFace",
+            bd=0,
+            command=self.open_dir,
+        )
+
+        self.browse_btn = tk.Button(
+            self.wrapper_top,
+            text="Browse Location",
+            fg="black",
+            bg="#DAF7A6",
+            command=self.browse_folders,
+        )
+        self.extract_btn = tk.Button(
+            self.wrapper_top,
+            text="Extract Archives",
+            fg="black",
+            bg="#FFC300",
+            command=self.extract_archives,
+        )
+        self.run_organizer_btn = tk.Button(
+            self.wrapper_top,
+            text="Run Organizer",
+            fg="black",
+            bg="#4CBB17",
+            command=self.selected_item_organize,
+        )
+        self.remove_local_bk = tk.Button(
+            self.wrapper_top,
+            text="Remove Backup",
+            fg="black",
+            bg="#d9dcdf",
+            command=self.confirm_remove_bk,
+        )
+        self.remove_junk_folders = tk.Button(
+            self.wrapper_top,
+            text="Remove Junk",
+            fg="black",
+            bg="#d9dcdf",
+            command=self.confirm_remove_junk,
+        )
+        self.refresh = tk.Button(
+            self.wrapper_top,
+            text="Refresh List",
+            fg="black",
+            bg="#d9dcdf",
+            command=self.refresh_list,
+        )
+
+        self.select_text_file_urls_btn = tk.Button(
+            self.wrapper_bottom,
+            text="Select Links File",
+            fg="black",
+            bg="#DAF7A6",
+            command=self.pickTextFileWithUrls,
+        )
+        self.download_links_btn = tk.Button(
+            self.wrapper_bottom,
+            text="",
+            fg="black",
+            bg="#FFC300",
+        )
+        self.get_data = tk.Button(
+            self.wrapper_bottom,
+            text="GET -> Links File",
+            fg="black",
+            bg="#4CBB17",
+            command=self.download_selected_urls,
+        )
+        self.setpath_btn = tk.Button(
+            self.wrapper_bottom, text="...", width=3, command=self.set_download_folder
+        )
+
+        # Position buttons Wrapper Top
+        self.assets_organizer_lbl.place(x=5, y=0, width=100, height=30)
+        self.open_dir_btn.place(x=120, y=0, width=70, height=30)
+        self.none_btn.place(x=190, y=0, width=70, height=30)
+        self.select_all_btn.place(x=260, y=0, width=70, height=30)
+
+        self.listbox.place(x=5, y=35, width=325, height=420)
+
+        self.browse_btn.place(x=10, y=460, width=105, height=30)
+        self.extract_btn.place(x=118, y=460, width=105, height=30)
+        self.run_organizer_btn.place(x=225, y=460, width=105, height=30)
+
+        self.remove_local_bk.place(x=10, y=493, width=105, height=30)
+        self.remove_junk_folders.place(x=118, y=493, width=105, height=30)
+        self.refresh.place(x=225, y=493, width=105, height=30)
+
+        # Position buttons Wrapper Bottom
+        self.batch_download_lbl.place(x=5, y=0, width=100, height=20)
+        self.select_text_file_urls_btn.place(x=10, y=25, width=105, height=30)
+        self.download_links_btn.place(x=118, y=25, width=105, height=30)
+        self.get_data.place(x=225, y=25, width=105, height=30)
+
+        self.download_folder_lbl.place(x=10, y=60, width=130, height=20)
+        self.download_folder_entry.place(x=10, y=85, width=270, height=20)
+        self.setpath_btn.place(x=285, y=85, width=35, height=20)
+        self.prog_bar.place(x=10, y=110, width=310, height=20)
+        self.percent_lbl.place(x=10, y=130, width=40, height=20)
+
         self.listbox.configure(xscrollcommand=self.xscrollbar.set)
         self.listbox.configure(yscrollcommand=self.yscrollbar.set)
-
-        self.wrapper_top.pack(fill="both", expand="yes", padx=10, pady=10)
 
         # Adjust buttons hovering effect
         self.changeOnHover(self.select_all_btn, "#AFE1AF", "SystemButtonFace")
@@ -178,12 +216,18 @@ class App(tk.Tk):
         self.changeOnHover(self.open_dir_btn, "#AFE1AF", "SystemButtonFace")
         self.changeOnHover(self.browse_btn, "#A7C7E7", "#DAF7A6")
         self.changeOnHover(self.extract_btn, "#A7C7E7", "#FFC300")
-        self.changeOnHover(self.runOrganizer_btn, "#A7C7E7", "#4CBB17")
+        self.changeOnHover(self.run_organizer_btn, "#A7C7E7", "#4CBB17")
         self.changeOnHover(self.remove_local_bk, "#A7C7E7", "#d9dcdf")
         self.changeOnHover(self.remove_junk_folders, "#A7C7E7", "#d9dcdf")
         self.changeOnHover(self.refresh, "#A7C7E7", "#d9dcdf")
 
-    ###     FUNCTIONS FOR WRAPPER - FILES / FOLDER CLEANUP    ###
+        # Pack wrappers
+        self.wrapper_top.pack(fill="both", expand="yes", padx=10)
+        self.wrapper_top.config(height=390)
+        self.wrapper_bottom.pack(fill="both", expand="yes", padx=10, pady=5)
+        # self.wrapper_bottom.config(height=100)
+
+    ###     FUNCTIONS FOR WRAPPER 1 - FILES / FOLDER CLEANUP    ###
 
     # Load and resize each image loaded
     def load_and_resize_image(self, file_path, max_width, max_height):
@@ -215,27 +259,28 @@ class App(tk.Tk):
 
     def browse_folders(self):
         try:
-            global path_with_folders
-            path_with_folders = filedialog.askdirectory(initialdir="/")
+            global root_location_to_organize
+            root_location_to_organize = filedialog.askdirectory(initialdir="/")
 
-            global subFolders
-            subFolders = [
+            global root_child_folders
+            root_child_folders = [
                 str(itm)
-                for itm in os.listdir(path_with_folders)
-                if os.path.isdir(os.path.join(path_with_folders, itm)) and os.path.exists(os.path.join(path_with_folders, itm))
+                for itm in os.listdir(root_location_to_organize)
+                if os.path.isdir(os.path.join(root_location_to_organize, itm))
+                and os.path.exists(os.path.join(root_location_to_organize, itm))
             ]
-            
+
             # remove items in list
             self.listbox.delete(0, "end")
-            
+
             # add new items to list
-            if len(subFolders) > 0:
-                for i in range(len(subFolders)):
-                    self.listbox.insert(i, subFolders[i])
+            if len(root_child_folders) > 0:
+                for i in range(len(root_child_folders)):
+                    self.listbox.insert(i, root_child_folders[i])
 
             else:
-                self.listbox.insert(0, "No Subfolders Found in Specified Location")
-                print("No Subfolders found")
+                self.listbox.insert(0, "No root_child_folders Found in Specified Location")
+                print("No root_child_folders found")
 
         except FileNotFoundError:
             print("Loading path canceled by user")
@@ -243,34 +288,57 @@ class App(tk.Tk):
             print("Name error on path")
         except PermissionError:
             print("Permisions not allowed by admin")
-    
+
     def refresh_list(self):
         try:
-            if path_with_folders:
-                subFolders = [
+            # case where external links file is provided
+            if "https://" in self.listbox.get(0):
+                if textFileWithUrls:
+                    with open(textFileWithUrls) as f:
+                        content = f.readlines()
+
+                    # remove whitespace characters like `\n` at the end of each line
+                    global links_list
+                    links_list = [x.strip() for x in content]
+                    links_list = [
+                        x
+                        for x in links_list
+                        if f"{os.getenv('links_app_url')}" in x or f"{os.getenv('storage_app_url')}" in x
+                    ]
+
+                    self.listbox.delete(0, "end")
+
+                    if len(links_list) > 0:
+                        for i in range(len(links_list)):
+                            self.listbox.insert(i, links_list[i])
+                
+            # case where local paths are loaded
+            elif root_location_to_organize:
+                root_child_folders = [
                     str(itm)
-                    for itm in os.listdir(path_with_folders)
-                    if os.path.isdir(os.path.join(path_with_folders, itm)) and os.path.exists(os.path.join(path_with_folders, itm))
+                    for itm in os.listdir(root_location_to_organize)
+                    if os.path.isdir(os.path.join(root_location_to_organize, itm))
+                    and os.path.exists(os.path.join(root_location_to_organize, itm))
                 ]
                 # remove items in list
                 self.listbox.delete(0, "end")
-                
+
                 # add new items to list
-                if len(subFolders) > 0:
-                    for i in range(len(subFolders)):
-                        self.listbox.insert(i, subFolders[i])
+                if len(root_child_folders) > 0:
+                    for i in range(len(root_child_folders)):
+                        self.listbox.insert(i, root_child_folders[i])
                 else:
-                    self.listbox.insert(0, "No Subfolders Found in Specified Location")
-                    print("No Subfolders found")
+                    self.listbox.insert(0, "No root_child_folders Found in Specified Location")
+                    print("No root_child_folders found")
             else:
                 print("Error with the path")
         except NameError:
-            print('"path_with_folders" is not defined')
+            print('"root_location_to_organize" is not defined')
 
-    def selected_item(self):
+    def selected_item_organize(self):
         try:
             for i in self.listbox.curselection():
-                local_folder_path = os.path.join(path_with_folders, self.listbox.get(i))
+                local_folder_path = os.path.join(root_location_to_organize, self.listbox.get(i))
 
                 org.organize_folder(local_folder_path)
 
@@ -293,7 +361,7 @@ class App(tk.Tk):
         try:
             if len(self.listbox.curselection()) > 0:
                 for i in self.listbox.curselection():
-                    junk_folder = f"{path_with_folders}\\{self.listbox.get(i)}\\junk"
+                    junk_folder = f"{root_location_to_organize}\\{self.listbox.get(i)}\\junk"
 
                     try:
                         shutil.rmtree(junk_folder)
@@ -311,7 +379,7 @@ class App(tk.Tk):
             if len(self.listbox.curselection()) > 0:
                 for i in self.listbox.curselection():
                     local_bk_folder = (
-                        f"{path_with_folders}\\{self.listbox.get(i)}\\local_backup"
+                        f"{root_location_to_organize}\\{self.listbox.get(i)}\\local_backup"
                     )
 
                     try:
@@ -329,7 +397,7 @@ class App(tk.Tk):
         try:
             if len(self.listbox.curselection()) > 0:
                 for i in self.listbox.curselection():
-                    root_folder = os.path.join(path_with_folders, self.listbox.get(i))
+                    root_folder = os.path.join(root_location_to_organize, self.listbox.get(i))
                     try:
                         archives_found = [
                             os.path.join(root, filename)
@@ -351,22 +419,20 @@ class App(tk.Tk):
             # Handle any exceptions that occur during selection process
             print("An error occurred while extracting the archives:", str(e))
 
-
     def extract_recursively(self, archive_path, output_folder):
         # Get extracted folder
         extract_folder = os.path.join(output_folder, os.path.splitext(archive_path)[0])
-        
+
         try:
             from unrar import rarfile
-            
+
             with rarfile.RarFile(archive_path, "r") as archive:
                 # Extract all files in the archive
                 archive.extractall(extract_folder)
 
-        except ImportError:            
+        except ImportError:
             print("RAR module not found. You may need to install it.")
-                
-            
+
         try:
             if not os.path.exists(extract_folder):
                 # Create the output folder if it doesn't exist
@@ -382,7 +448,6 @@ class App(tk.Tk):
             if os.path.splitext(filename)[1][1:].lower() in ["zip", "rar"]
         ]
         if len(child_archives) > 0:
-            
             for child in child_archives:
                 nested_output_folder = os.path.dirname(child)
 
@@ -393,12 +458,11 @@ class App(tk.Tk):
                         # Extract all files in the archive
                         zip_archive.extractall(nested_output_folder)
 
-    # open selected folder
     def open_dir(self):
         selected_indices = self.listbox.curselection()
         if len(selected_indices) == 1:
             selected_folder = self.listbox.get(selected_indices[0])
-            basis_folder = os.path.join(path_with_folders, selected_folder)
+            basis_folder = os.path.join(root_location_to_organize, selected_folder)
             if os.path.exists(basis_folder):
                 os.startfile(basis_folder)
         else:
@@ -419,6 +483,71 @@ class App(tk.Tk):
         )
         if answer:
             self.remove_junk()
+
+    ###     FUNCTIONS FOR WRAPPER 2 - WEBSCRAPE DATA     ###
+
+    def pickTextFileWithUrls(self):
+        try:
+            global textFileWithUrls
+            textFileWithUrls = filedialog.askopenfilename(
+                initialdir="/",
+                title="Select File",
+                filetypes=(("text files", "*.txt"), ("all files", "*.*")),
+            )
+            with open(textFileWithUrls) as f:
+                content = f.readlines()
+
+            # remove whitespace characters like `\n` at the end of each line
+            global links_list
+            links_list = [x.strip() for x in content]
+            links_list = [
+                x
+                for x in links_list
+                if f"{os.getenv('links_app_url')}" in x or f"{os.getenv('storage_app_url')}" in x
+            ]
+
+            self.listbox.delete(0, "end")
+
+            if len(links_list) > 0:
+                for i in range(len(links_list)):
+                    self.listbox.insert(i, links_list[i])
+
+        except FileNotFoundError or NameError:
+            pass
+
+    def set_download_folder(self):
+        self.download_folder_entry.delete(0, tk.END)
+
+        global downloadPATH
+        downloadPATH = filedialog.askdirectory(initialdir="/")
+
+        self.download_folder_entry.insert(0, downloadPATH)
+
+    # download urls
+    def download_selected_urls(self):
+        try:
+            if downloadPATH and textFileWithUrls:
+                selected_indices = self.listbox.curselection()
+                selected_urls = [self.listbox.get(i) for i in selected_indices]
+
+                if selected_urls and len(selected_urls) > 0:
+                    if f"{os.getenv('storage_app_url')}" in selected_urls[0]:
+                        ws_data.download_cloud_urls(downloadPATH, selected_urls)
+                    elif f"{os.getenv('links_app_url')}" in selected_urls[0]:
+                        ws_data.webscrape_urls(downloadPATH, selected_urls)
+                else:
+                    messagebox.showinfo("Information", "No URLs selected")
+            else:
+                if not downloadPATH:
+                    messagebox.showinfo(
+                        "Information", "Download folder path not specified"
+                    )
+                if not textFileWithUrls:
+                    messagebox.showinfo(
+                        "Information", "Text file with URLs not specified"
+                    )
+        except Exception as e:
+            messagebox.showinfo("Error", f"An error occurred: {str(e)}")
 
 
 if __name__ == "__main__":
