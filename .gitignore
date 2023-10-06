@@ -1,9 +1,12 @@
 .vscode
 .env
-
+.gitignore
+__pycache__
 env/
 build/
 modules/__pycache__/
 .dependencies/
 .compilers/
 .SAM-Installer/
+.encrypted/
+.sample-files/

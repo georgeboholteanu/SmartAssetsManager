@@ -1,3 +1,9 @@
+[![python3.10.6](https://img.shields.io/badge/Python-3660AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/release/python-3106/)
+[![mail me](https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:george.boholteanu@gmail.com)
+![](https://img.shields.io/badge/web--scraping-1452A.svg)
+![](https://img.shields.io/badge/files--encryption-27282D.svg)
+![](https://img.shields.io/badge/files--management-13245A.svg)
+
 
 *A.  DESCRIPTION*
 
@@ -10,34 +16,28 @@ It uses **requests** module to login on hosting platform of the assets and downl
 
 *B.  REQUIREMENTS*
 * The application is compatible with machines running **WINDOWS 10/11 OS**.
-* ***UnRARDLL*** is required to unpack ".rar" files.
-* SAM application needs to be opened in ***Administrator mode*** for the ***first time*** in order to check if UnRARDLL is present on the local machine and if System Variable has beed created already in System Environment Variables. If their presence is not found they will be installed accordingly.
-* System Variable parameters:
-    - Variable Name: __UNRAR_LIB_PATH__
-    - Variable Value: __C:\Program Files (x86)\UnrarDLL\x64\UnRAR64.dll__
-
+* ***7 Zip*** is required to unpack archive files.
+* SAM application can check if ***7 Zip*** is present on the local machine if is opened in ***Administrator mode***. If their presence is not found they will be installed accordingly.
 
 *C.  UTILITIES*
-*  In project root folder run __python setup.py build__ --> automatically incapsulates the app into an executable file using **setup.py** configuration file and **cx_Freeze** library. The command will create the app in the **build** folder
+*  In project root folder run __python setup.py build__ --> automatically freezes the app into an executable file using **setup.py** configuration file and **cx_Freeze** library. The command will create the app in the **build** folder
 
 
 *D.  DEPENDENCIES*
-* ***UnRARDLL-installer.exe*** is provided with the SAM installation file.
-* SAM installation file will automatically ask for UnRARDLL installation on the local machine
-* UnRARDLL installation files and extra information can be found on the [RARLAB](https://www.rarlab.com/rar_add.htm) website
+* ***7 Zip Installer*** is provided with the SAM installation file.
+* SAM installation file will automatically ask for 7 Zip installation on the local machine
+* 7 Zip installation files and extra information can be found on the [7ZIP](https://www.7-zip.org/) website
 
 
 *E.  COMPILERS*
-* **INNO SETUP** has been used to create the installation file for the application
-* Compiler settings have been saved in ***SAM-inno Setup.iss*** file
-* On execution the compiler will export ***SAM - Installer.exe*** file in the ***SAM - Installer*** folder
+* **INNO SETUP** can be used to create the installation file for the application
+* 
 
 *F.  MODULES*
-* The following modules ***organize_folders.py*** and ***batch_download.py*** are responsible to organize the files in folders and login/download the required assets from the hosting platform.
+* The following modules ***organize_folders.py*** and ***ws_data.py*** are responsible to organize the files in folders and login/download the required assets from the hosting platform.
 * ***filters.json*** sets the folders structure and how the different file types will be spread in the root folder
 
-*G.  USING THE APP*
-  
+*G.  USING THE APP*  
 
   As a best practice is recommended to create a local Virtual Environment. This can be done by:
   * running **pip install virtualenv** to Install a Virtual Environment using Venv
@@ -56,8 +56,9 @@ It uses **requests** module to login on hosting platform of the assets and downl
 
 * **Extract Archives** will unpack each archive found in corresponding folder
 * **Run Organizer** will tidy the contents for the folders selected
-
-**BATCH DOWNLOAD**
-* You will be required to provide a ***.txt*** file that contains all the URLs in the **Links File**. You will need to specify the Download Folder and press **Download Links**.
-
 * Pressing **Clear Junk** and **Clear Backup** buttons will remove these folders content in the parent folders specified.
+
+
+**Getting the data**
+* You will be required to provide a ***.txt*** file that contains all the URLs in the **Links File**. You will need to specify the Download Folder and press **Get ->Links File**.
+

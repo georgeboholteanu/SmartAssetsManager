@@ -6,9 +6,8 @@ import json
 import zipfile
 import pathlib
 import stat
-from dotenv import load_dotenv
+from modules import fix_dependencies as fix
 
-load_dotenv()
 
 def redo_with_write(redo_func, path, err):
     os.chmod(path, stat.S_IWRITE)
@@ -38,9 +37,10 @@ def create_backup(targetPATH):
 def organize_folder(targetPATH):
     # Create backup folder
     create_backup(os.path.join(targetPATH))
-    
+        
+    fix.decrypt("ekey.key", "eenv")
     # Load the filters from the JSON file
-    with open(f"{os.getenv('proj_path')}" + "/modules/filters.json") as f:
+    with open(os.environ.get('proj_path')[1:-1] + "/modules/filters.json") as f:
         global filters
         filters = json.load(f)
 
