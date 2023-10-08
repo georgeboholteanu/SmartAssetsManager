@@ -208,7 +208,7 @@ class App(tk.Tk):
         self.changeOnHover(self.remove_local_bk, "#A7C7E7", "#d9dcdf")
         self.changeOnHover(self.remove_junk_folders, "#A7C7E7", "#d9dcdf")
         self.changeOnHover(self.refresh, "#A7C7E7", "#d9dcdf")
-        self.changeOnHover(self.select_text_file_urls_btn, "#A7C7E7", "#FFC300")
+        self.changeOnHover(self.select_text_file_urls_btn, "#A7C7E7", "#DAF7A6")
         self.changeOnHover(self.get_data, "#A7C7E7", "#4CBB17")
 
         # Pack wrappers
